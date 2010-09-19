@@ -1,221 +1,224 @@
 <html>
-<head>
-<script type="text/javascript">
-tabs = {};
-tabIds = [];
+  <head>
+    <script type="text/javascript">
+      tabs = {};
+      tabIds = [];
 
-focusedWindowId = undefined;
-currentWindowId = undefined;
+      focusedWindowId = undefined;
+      currentWindowId = undefined;
 
-function _reverse(url) {
-  retval = "";
-  for (i = 0; i <= url.length; i++)
-    retval = url.substring(i, i+1) + retval;
-  return retval;
-}
-
-function _explode (delimiter, string, limit) {
-  var emptyArray = { 0: '' };
-
-  if ( arguments.length < 2 ||
-    typeof arguments[0] == 'undefined' ||
-    typeof arguments[1] == 'undefined' ) {
-    return null;
-  }
-
-  if ( delimiter === '' ||
-    delimiter === false ||
-    delimiter === null ) {
-    return false;
-  }
-
-  if ( typeof delimiter == 'function' ||
-    typeof delimiter == 'object' ||
-    typeof string == 'function' ||
-    typeof string == 'object' ) {
-    return emptyArray;
-  }
-
-  if ( delimiter === true ) {
-    delimiter = '1';
-  }
-
-  if (!limit) {
-    return string.toString().split(delimiter.toString());
-  } else {
-    // support for limit argument
-    var splitted = string.toString().split(delimiter.toString());
-    var partA = splitted.splice(0, limit - 1);
-    var partB = splitted.join(delimiter.toString());
-    partA.push(partB);
-    return partA;
-  }
-}
-
-function _enfiando(id,url){
-  try {
-    _notificando_ok();
-    chrome.tabs.update(id, {'url': url,'selected': true});
-  } catch (e) {
-    alert(e);
-  }
-}
-
-function _count (mixed_var, mode) {
-  var key, cnt = 0;
-  if (mixed_var === null){
-    return 0;
-  } else if (mixed_var.constructor !== Array && mixed_var.constructor !== Object){
-    return 1;
-  }
-
-  if (mode === 'COUNT_RECURSIVE') {
-    mode = 1;
-  }
-  if (mode != 1) {
-    mode = 0;
-  }
-
-  for (key in mixed_var){
-    if (mixed_var.hasOwnProperty(key)) {
-      cnt++;
-      if ( mode==1 && mixed_var[key] && (mixed_var[key].constructor === Array || mixed_var[key].constructor === Object) ){
-        cnt += this.count(mixed_var[key], 1);
+      function _reverse(url) {
+        retval = "";
+        for (i = 0; i <= url.length; i++)
+          retval = url.substring(i, i+1) + retval;
+        return retval;
       }
-    }
-  }
-  return cnt;
-}
 
-function _str_replace (search, replace, subject, count) {
-  var i = 0, j = 0, temp = '', repl = '', sl = 0, fl = 0,
-  f = [].concat(search),
-  r = [].concat(replace),
-  s = subject,
-  ra = r instanceof Array, sa = s instanceof Array;
-  s = [].concat(s);
-  if (count) {
-    this.window[count] = 0;
-  }
+      function _explode (delimiter, string, limit) {
+        var emptyArray = { 0: '' };
 
-  for (i=0, sl=s.length; i < sl; i++) {
-    if (s[i] === '') {
-      continue;
-    }
-    for (j=0, fl=f.length; j < fl; j++) {
-      temp = s[i]+'';
-      repl = ra ? (r[j] !== undefined ? r[j] : '') : r[0];
-      s[i] = (temp).split(f[j]).join(repl);
-      if (count && s[i] !== temp) {
-        this.window[count] += (temp.length-s[i].length)/f[j].length;
-      }
-    }
-  }
-  return sa ? s : s[0];
-}
+        if ( arguments.length < 2 ||
+          typeof arguments[0] == 'undefined' ||
+          typeof arguments[1] == 'undefined' ) {
+          return null;
+        }
 
-function _notificando_ok() {
-  // Create a simple text notification:
-  var notification = webkitNotifications.createNotification(
-    'ok.png',  // icon url - can be relative
-    'Link desbloqueado com sucesso',  // notification title
-    'boa sorte no download e divulgue para amigos!'  // notification body text
-  );
-  // Then show the notification.
-  notification.show();
-}
+        if ( delimiter === '' ||
+          delimiter === false ||
+          delimiter === null ) {
+          return false;
+        }
 
-function _notificando_erro() {
-  // Create a simple text notification:
-  var notification = webkitNotifications.createNotification(
-    'erro.png',  // icon url - can be relative
-    'Alerta',  // notification title
-    'Sem link para desbloquear'  // notification body text
-  );
-  // Then show the notification.
-  notification.show();
-}
+        if ( typeof delimiter == 'function' ||
+          typeof delimiter == 'object' ||
+          typeof string == 'function' ||
+          typeof string == 'object' ) {
+          return emptyArray;
+        }
 
-function bootStrap() {
-  chrome.windows.getCurrent(function(currentWindow) {
-    currentWindowId = currentWindow.id;
-    chrome.windows.getLastFocused(function(focusedWindow) {
-      focusedWindowId = focusedWindow.id;
-      loadWindowList();
-    });
-  });
-}
+        if ( delimiter === true ) {
+          delimiter = '1';
+        }
 
-function isInt(i) {
-  return (typeof i == "number") && !(i % 1) && !isNaN(i);
-}
-
-function loadWindowList() {
-  chrome.windows.getAll({ populate: true }, function(windowList) {
-    tabs = {};
-    tabIds = [];
-    for (var i = 0; i < windowList.length; i++) {
-      windowList[i].current = (windowList[i].id == currentWindowId);
-      windowList[i].focused = (windowList[i].id == focusedWindowId);
-
-      for (var j = 0; j < windowList[i].tabs.length; j++) {
-        tabIds[tabIds.length] = windowList[i].tabs[j].id;
-        tabs[windowList[i].tabs[j].id] = windowList[i].tabs[j];
-        if(windowList[i].tabs[j].selected){
-          var id  = windowList[i].tabs[j].id;
-          var t1  = _explode('//:',windowList[i].tabs[j].url);
-          var t2  = _explode('?url=',windowList[i].tabs[j].url);
-          var t3  = _explode('?link=',windowList[i].tabs[j].url);
-          var t4  = _explode('?go!',windowList[i].tabs[j].url);
-          var url = _str_replace('#','',_reverse(windowList[i].tabs[j].url));
-          url = _str_replace('#','',url);
-
-          if(t1[1]=='ptth'||t1[1]=='ptth#'){
-            url = _explode('?',url);
-            if(_count(url)>2){
-              t11 = _explode('=lr',url[1]);
-              t12 = _explode('=kni',url[1]);
-              if(t11[1]=='u') {
-                url = url[0]+'?'+t11[0];
-              } else if(t12[1]=='l') {
-                url = url[0]+'?'+t12[0];
-              } else {
-                url = url[0]+'?'+url[1];
-              }
-              _enfiando(id,url);
-            } else {
-              url = url[0];
-              _enfiando(id,url);
-            }
-          } else if(_count(t2)>1) {
-              var t22 = _explode('//:',windowList[i].tabs[j].url);
-              if(t22[1]=='ptth'||t22[1]=='ptth#'){
-                url = _reverse(t2[1]);
-              } else {
-                url = t2[1];
-              }
-              _enfiando(id,url);
-          } else if(_count(t3)>1) {
-              var t33 = _explode('//:',windowList[i].tabs[j].url);
-              if(t33[1]=='ptth'||t33[1]=='ptth#'){
-                url = _reverse(t3[1]);
-              } else {
-                url = t3[1];
-              }
-              _enfiando(id,url);
-          } else if(_count(t4)>1) {
-              url = t4[0]+'?down!'+t4[1];
-              _enfiando(id,url);
-          } else {
-            _notificando_erro();
-          }
+        if (!limit) {
+          return string.toString().split(delimiter.toString());
+        } else {
+          // support for limit argument
+          var splitted = string.toString().split(delimiter.toString());
+          var partA = splitted.splice(0, limit - 1);
+          var partB = splitted.join(delimiter.toString());
+          partA.push(partB);
+          return partA;
         }
       }
-    }
-  });
-}
-</script>
-</head>
+
+      function _enfiando(id,url){
+        try {
+          _notificando_ok();
+          chrome.tabs.update(id, {'url': url,'selected': true});
+        } catch (e) {
+          alert(e);
+        }
+      }
+
+      function _count (mixed_var, mode) {
+        var key, cnt = 0;
+        if (mixed_var === null){
+          return 0;
+        } else if (mixed_var.constructor !== Array && mixed_var.constructor !== Object){
+          return 1;
+        }
+
+        if (mode === 'COUNT_RECURSIVE') {
+          mode = 1;
+        }
+        if (mode != 1) {
+          mode = 0;
+        }
+
+        for (key in mixed_var){
+          if (mixed_var.hasOwnProperty(key)) {
+            cnt++;
+            if ( mode==1 && mixed_var[key] && (mixed_var[key].constructor === Array || mixed_var[key].constructor === Object) ){
+              cnt += this.count(mixed_var[key], 1);
+            }
+          }
+        }
+        return cnt;
+      }
+
+      function _str_replace (search, replace, subject, count) {
+        var i = 0, j = 0, temp = '', repl = '', sl = 0, fl = 0,
+        f = [].concat(search),
+        r = [].concat(replace),
+        s = subject,
+        ra = r instanceof Array, sa = s instanceof Array;
+        s = [].concat(s);
+        if (count) {
+          this.window[count] = 0;
+        }
+
+        for (i=0, sl=s.length; i < sl; i++) {
+          if (s[i] === '') {
+            continue;
+          }
+          for (j=0, fl=f.length; j < fl; j++) {
+            temp = s[i]+'';
+            repl = ra ? (r[j] !== undefined ? r[j] : '') : r[0];
+            s[i] = (temp).split(f[j]).join(repl);
+            if (count && s[i] !== temp) {
+              this.window[count] += (temp.length-s[i].length)/f[j].length;
+            }
+          }
+        }
+        return sa ? s : s[0];
+      }
+
+      function _notificando_ok() {
+        // Create a simple text notification:
+        var notification = webkitNotifications.createNotification(
+          'ok.png',  // icon url - can be relative
+          'Link desbloqueado com sucesso',  // notification title
+          'boa sorte no download e divulgue para amigos!'  // notification body text
+        );
+        // Then show the notification.
+        notification.show();
+      }
+
+      function _notificando_erro() {
+        // Create a simple text notification:
+        var notification = webkitNotifications.createNotification(
+          'erro.png',  // icon url - can be relative
+          'Alerta',  // notification title
+          'Sem link para desbloquear'  // notification body text
+        );
+        // Then show the notification.
+        notification.show();
+      }
+
+      function bootStrap() {
+        chrome.windows.getCurrent(function(currentWindow) {
+          currentWindowId = currentWindow.id;
+          chrome.windows.getLastFocused(function(focusedWindow) {
+            focusedWindowId = focusedWindow.id;
+            loadWindowList();
+          });
+        });
+      }
+
+      function isInt(i) {
+        return (typeof i == "number") && !(i % 1) && !isNaN(i);
+      }
+
+      function loadWindowList() {
+        chrome.windows.getAll({ populate: true }, function(windowList) {
+          tabs = {};
+          tabIds = [];
+          for (var i = 0; i < windowList.length; i++) {
+            windowList[i].current = (windowList[i].id == currentWindowId);
+            windowList[i].focused = (windowList[i].id == focusedWindowId);
+
+            for (var j = 0; j < windowList[i].tabs.length; j++) {
+              tabIds[tabIds.length] = windowList[i].tabs[j].id;
+              tabs[windowList[i].tabs[j].id] = windowList[i].tabs[j];
+              if(windowList[i].tabs[j].selected){
+                var id  = windowList[i].tabs[j].id;
+                var t1  = _explode('//:',windowList[i].tabs[j].url);
+                var t2  = _explode('?url=',windowList[i].tabs[j].url);
+                var t3  = _explode('?link=',windowList[i].tabs[j].url);
+                var t4  = _explode('?go!',windowList[i].tabs[j].url);
+                var url = _str_replace('#','',_reverse(windowList[i].tabs[j].url));
+                var ttl = _explode('http://',windowList[i].tabs[j].title);
+
+                if(t1[1]=='ptth'||t1[1]=='ptth#'){
+                  url = _explode('?',url);
+                  if(_count(url)>2){
+                    t11 = _explode('=lr',url[1]);
+                    t12 = _explode('=kni',url[1]);
+                    if(t11[1]=='u') {
+                      url = url[0]+'?'+t11[0];
+                    } else if(t12[1]=='l') {
+                      url = url[0]+'?'+t12[0];
+                    } else {
+                      url = url[0]+'?'+url[1];
+                    }
+                    _enfiando(id,url);
+                  } else {
+                    url = url[0];
+                    _enfiando(id,url);
+                  }
+                } else if(_count(t2)>1) {
+                    var t22 = _explode('//:',windowList[i].tabs[j].url);
+                    if(t22[1]=='ptth'||t22[1]=='ptth#'){
+                      url = _reverse(t2[1]);
+                    } else {
+                      url = t2[1];
+                    }
+                    _enfiando(id,url);
+                } else if(_count(t3)>1) {
+                    var t33 = _explode('//:',windowList[i].tabs[j].url);
+                    if(t33[1]=='ptth'||t33[1]=='ptth#'){
+                      url = _reverse(t3[1]);
+                    } else {
+                      url = t3[1];
+                    }
+                    _enfiando(id,url);
+                } else if(_count(t4)>1) {
+                    url = t4[0]+'?down!'+t4[1];
+                    _enfiando(id,url);
+                } else if(ttl[0]="'") {
+                    url = _str_replace("'",'',windowList[i].tabs[j].title);;
+                    _enfiando(id,url);
+                } else {
+                  _notificando_erro();
+                }
+              }
+            }
+          }
+        });
+      }
+    </script>
+  </head>
   <body onload="bootStrap();" style="display:none">
   </body>
 </html>
