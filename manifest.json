@@ -1,0 +1,14 @@
+{
+  "name": "DesProtetor de Links",
+  "version": "1.1",
+  "description": "Se você já esta puto com essa merda de extorsão para fazer o seu download instale o desprotetor de links",
+  "browser_action": {
+    "default_icon": "chave.png",
+    "popup": "popup.html"
+  },
+  "permissions": [
+    "notifications",
+    "http://*/*",
+    "tabs"
+  ]
+}
